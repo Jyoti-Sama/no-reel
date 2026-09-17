@@ -1,251 +1,389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-  <title>Nothing Feed</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Nothing Feed</title>
 
-  <!-- PWA Metadata -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0d0e15" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Nothing" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E1118">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nothing">
+<link rel="apple-touch-icon" href="icon-192.png">
 
-  <style>
-    :root {
-      --glow: #c9d4e6;
-      --ink: #0d0e15;
-      --hair: rgba(255, 255, 255, 0.12);
-    }
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
+<style>
+:root{
+  --ink:      #0E1118;
+  --ink-lift: #141823;
+  --glow:     #C9D4E6;
+  --mute:     #767F91;
+  --faint:    #39404F;
+  --hair:     rgba(201,212,230,.09);
+  --sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --serif: "Instrument Serif", ui-serif, Georgia, serif;
+}
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      height: 100dvh;
-      overflow: hidden;
-      background: var(--ink);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      overscroll-behavior: none;
-    }
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 
-    /* Vertical snapping container */
-    #feed {
-      position: absolute;
-      inset: 0;
-      overflow-y: scroll;
-      scroll-snap-type: y mandatory;
-      overscroll-behavior-y: contain;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    #feed::-webkit-scrollbar {
-      display: none;
-    }
+html,body{
+  height:100%; height:100dvh;
+  background:var(--ink);
+  color:var(--glow);
+  font-family:var(--sans);
+  overscroll-behavior:none;
+}
+body{
+  position:fixed; inset:0;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
 
-    /* Card background with fluid dancing gradient */
-    .reel {
-      position: relative;
-      width: 100%;
-      height: 100dvh;
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-size: 300% 300%;
-      animation: dancingGradient 9s ease infinite;
-    }
+/* ── feed ───────────────────────────────────── */
+#feed{
+  position:absolute; inset:0;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
+  overscroll-behavior-y:contain;
+  scrollbar-width:none;
+  outline:none;
+}
+#feed::-webkit-scrollbar{ display:none; }
 
-    @keyframes dancingGradient {
-      0% {
-        background-position: 0% 50%;
-        filter: hue-rotate(0deg);
-      }
-      50% {
-        background-position: 100% 50%;
-        filter: hue-rotate(25deg);
-      }
-      100% {
-        background-position: 0% 50%;
-        filter: hue-rotate(0deg);
-      }
-    }
+.reel{
+  position:relative;
+  height:100dvh;
+  width:100%;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  display:flex;
+  align-items:flex-end;
+  border-top:1px solid var(--hair);
+  background:var(--ink);
+  overflow:hidden;
+}
+.reel:first-child{ border-top:0; }
 
-    /* Centered reel number */
-    .reel-number {
-      font-size: clamp(5.5rem, 22vw, 8.5rem);
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: rgba(255, 255, 255, 0.9);
-      text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
-      pointer-events: none;
-      font-variant-numeric: tabular-nums;
-    }
+.reel::before{
+  content:"";
+  position:absolute;
+  inset:-35%;
+  z-index:0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(90,150,255,.55), transparent 28%),
+    radial-gradient(circle at 75% 25%, rgba(210,90,255,.45), transparent 30%),
+    radial-gradient(circle at 65% 75%, rgba(70,230,180,.42), transparent 30%),
+    radial-gradient(circle at 25% 80%, rgba(255,170,70,.35), transparent 28%);
+  filter:blur(55px) saturate(125%) hue-rotate(calc(var(--hue, 0) * 1deg));
+  animation:drift 11s ease-in-out infinite alternate;
+  transform:translate3d(0,0,0) scale(1.08);
+  opacity:.72;
+}
+.reel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:radial-gradient(circle at center, rgba(14,17,24,.04), rgba(4,6,10,.34) 75%);
+  pointer-events:none;
+}
+@keyframes drift{
+  0%{ transform:translate3d(-5%,2%,0) scale(1.08) rotate(0deg); }
+  50%{ transform:translate3d(4%,-3%,0) scale(1.14) rotate(7deg); }
+  100%{ transform:translate3d(1%,5%,0) scale(1.10) rotate(-5deg); }
+}
 
-    /* PWA install prompt banner */
-    #install-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
-      background: rgba(14, 17, 24, 0.85);
-      backdrop-filter: blur(14px);
-      border-top: 1px solid var(--hair);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    #install-bar[hidden] {
-      display: none;
-    }
-    #install-bar p {
-      font-size: 13px;
-      color: var(--glow);
-    }
-    .install-btn {
-      background: var(--glow);
-      color: var(--ink);
-      border: 0;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .dismiss-btn {
-      background: transparent;
-      border: 0;
-      font-size: 20px;
-      color: var(--glow);
-      cursor: pointer;
-      opacity: 0.7;
-    }
-  </style>
+.slug{
+  position:relative;
+  z-index:1;
+  padding:0 20px calc(36px + env(safe-area-inset-bottom)) 20px;
+  font-size:12px;
+  letter-spacing:.06em;
+  color:var(--faint);
+  font-variant-numeric:tabular-nums;
+}
+
+/* dead social rail */
+.rail{
+  position:absolute;
+  right:14px;
+  bottom:calc(32px + env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+  opacity:.12;
+  pointer-events:none;
+}
+.rail svg{ width:28px; height:28px; display:block; stroke:var(--glow); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+
+/* reel number */
+.reel-count{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:clamp(82px,25vw,150px);
+  line-height:1;
+  letter-spacing:-.04em;
+  color:rgba(255,255,255,.88);
+  text-shadow:0 2px 24px rgba(0,0,0,.28);
+  font-variant-numeric:tabular-nums;
+  user-select:none;
+}
+/* screen dims over time */
+#dim{
+  position:absolute; inset:0;
+  background:#04060A;
+  opacity:0;
+  pointer-events:none;
+  z-index:2;
+  transition:opacity 1.4s linear;
+}
+
+/* ── chrome ─────────────────────────────────── */
+#chrome{
+  position:absolute; top:0; left:0; right:0; z-index:3;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:calc(14px + env(safe-area-inset-top)) 16px 14px 18px;
+  background:linear-gradient(to bottom, rgba(14,17,24,.9), transparent);
+}
+#tally{ font-size:12px; letter-spacing:.05em; color:var(--mute); font-variant-numeric:tabular-nums; }
+
+button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+button:focus-visible{ outline:2px solid var(--glow); outline-offset:3px; border-radius:4px; }
+
+.pill{
+  border:1px solid var(--hair);
+  border-radius:999px;
+  padding:8px 16px;
+  font-size:13px;
+  color:var(--glow);
+  background:rgba(20,24,35,.75);
+  backdrop-filter:blur(10px);
+}
+
+/* ── sheets ─────────────────────────────────── */
+.sheet{
+  position:absolute; inset:0; z-index:5;
+  background:var(--ink);
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:calc(52px + env(safe-area-inset-top)) 26px calc(36px + env(safe-area-inset-bottom));
+  overflow-y:auto;
+}
+.sheet[hidden]{ display:none; }
+
+.sheet h1{
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:clamp(48px,14vw,76px);
+  line-height:.93;
+  letter-spacing:-.025em;
+}
+.sheet h1 em{ font-style:italic; }
+
+.lede{
+  margin-top:18px;
+  max-width:34ch;
+  font-size:15.5px;
+  line-height:1.55;
+  color:var(--mute);
+}
+
+.ledger{
+  border-top:1px solid var(--hair);
+  padding-top:15px;
+  font-size:13px;
+  color:var(--faint);
+  font-variant-numeric:tabular-nums;
+}
+.ledger p+p{ margin-top:5px; }
+
+.actions{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+.go{
+  width:100%; padding:15px; border-radius:12px;
+  background:var(--glow); color:var(--ink);
+  font-size:16px; font-weight:500;
+}
+.quiet{
+  width:100%; padding:15px; border-radius:12px;
+  border:1px solid var(--hair); color:var(--mute);
+  font-size:15px;
+}
+
+.toggle{
+  margin-top:18px;
+  display:flex; align-items:center; gap:9px;
+  font-size:13px; color:var(--faint);
+}
+.toggle input{ accent-color:var(--mute); width:15px; height:15px; }
+
+.stat{
+  font-family:var(--serif);
+  font-size:clamp(36px,11vw,58px);
+  line-height:1.05;
+  color:var(--glow);
+  max-width:18ch;
+}
+
+/* install banner */
+#install-bar{
+  position:absolute; bottom:0; left:0; right:0; z-index:10;
+  padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+  background:var(--ink-lift);
+  border-top:1px solid var(--hair);
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+#install-bar[hidden]{ display:none; }
+#install-bar p{ font-size:13px; color:var(--mute); max-width:22ch; line-height:1.4; }
+.install-btn{
+  flex-shrink:0;
+  background:var(--glow); color:var(--ink);
+  font-size:13px; font-weight:500;
+  padding:9px 16px; border-radius:8px;
+}
+.dismiss-btn{ font-size:22px; color:var(--faint); padding:0 4px; }
+</style>
 </head>
 <body>
 
-  <div id="feed"></div>
+<div id="feed" tabindex="0" aria-label="Empty feed"></div>
+<div id="dim"></div>
 
-  <!-- PWA Install Banner -->
-  <div id="install-bar" hidden>
-    <p>Install Nothing Feed</p>
-    <button class="install-btn" id="install-btn">Install</button>
-    <button class="dismiss-btn" id="dismiss-btn" aria-label="Dismiss">×</button>
-  </div>
 
-  <script>
-    /* ── Service Worker Registration ── */
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+<!-- Install banner (shows when installable) -->
+<div id="install-bar" hidden>
+  <p>Add Nothing Feed to your home screen</p>
+  <button class="install-btn" id="install-btn">Install</button>
+  <button class="dismiss-btn" id="dismiss-btn" aria-label="Dismiss">×</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── service worker ── */
+  if ('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+
+  /* ── PWA install prompt ── */
+  var deferredPrompt = null;
+  var installBar = document.getElementById('install-bar');
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    installBar.hidden = false;
+  });
+  document.getElementById('install-btn').addEventListener('click', function(){
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){ deferredPrompt = null; installBar.hidden = true; });
+  });
+  document.getElementById('dismiss-btn').addEventListener('click', function(){
+    installBar.hidden = true;
+  });
+  window.addEventListener('appinstalled', function(){ installBar.hidden = true; });
+
+  /* ── refs ── */
+  var feed   = document.getElementById('feed');
+  var dim    = document.getElementById('dim');
+
+  /* ── feed ── */
+  var base=0, maxIdx=0, lastSnap=-1;
+  var running=false, t0=0, sessionSec=0;
+
+  function makeCard(i){
+    var el=document.createElement('div');
+    el.className='reel';
+    el.style.setProperty('--hue', (i * 47) % 360);
+    el.setAttribute('aria-label','Reel '+(i+1));
+    el.innerHTML='<div class="reel-count">'+(i+1)+'</div>';
+    return el;
+  }
+
+  function grow(n){
+    var frag=document.createDocumentFragment();
+    var next=base+feed.children.length;
+    for(var k=0;k<n;k++) frag.appendChild(makeCard(next+k));
+    feed.appendChild(frag);
+  }
+
+  function curIdx(){
+    var h=feed.clientHeight||1;
+    return base+Math.round(feed.scrollTop/h);
+  }
+
+  var settle;
+  function trim(){
+    var h=feed.clientHeight; if(!h) return;
+    var off=Math.round(feed.scrollTop/h);
+    var excess=off-4; if(excess<12) return;
+    feed.style.scrollSnapType='none';
+    for(var k=0;k<excess;k++) feed.removeChild(feed.firstElementChild);
+    base+=excess;
+    feed.scrollTop-=excess*h;
+    requestAnimationFrame(function(){ feed.style.scrollSnapType=''; });
+  }
+
+  function buzz(){
+    try{
+      if(navigator.vibrate) navigator.vibrate(22);
+    }catch(e){}
+  }
+
+  feed.addEventListener('scroll', function(){
+    var i=curIdx();
+    if(i!==lastSnap){
+      lastSnap=i; buzz();
+      if(i>maxIdx) maxIdx=i;
     }
+    if(feed.children.length-(i-base)<6) grow(10);
+    clearTimeout(settle); settle=setTimeout(trim,300);
+  },{passive:true});
 
-    /* ── PWA Install Trigger ── */
-    let deferredPrompt = null;
-    const installBar = document.getElementById('install-bar');
-    const installBtn = document.getElementById('install-btn');
-    const dismissBtn = document.getElementById('dismiss-btn');
+  /* ── timing ── */
+  var tick;
+  function startTick(){
+    clearInterval(tick);
+    tick=setInterval(function(){
+      if(!running) return;
+      sessionSec=(Date.now()-t0)/1000;
+    },1000);
+  }
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBar.hidden = false;
-    });
+  /* ── flow ── */
+  function begin(){
+    base=0; maxIdx=0; lastSnap=-1;
+    sessionSec=0;
+    feed.innerHTML='';
+    grow(14);
+    feed.scrollTop=0;
+    dim.style.opacity=0;
+    running=true; t0=Date.now();
+    startTick();
+    feed.focus({preventScroll:true});
+  }
 
-    installBtn.addEventListener('click', () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
-        deferredPrompt = null;
-        installBar.hidden = true;
-      });
-    });
+  window.addEventListener('resize', function(){
+    if(running && lastSnap>=0) feed.scrollTop=(lastSnap-base)*feed.clientHeight;
+  });
 
-    dismissBtn.addEventListener('click', () => {
-      installBar.hidden = true;
-    });
-
-    window.addEventListener('appinstalled', () => {
-      installBar.hidden = true;
-    });
-
-    /* ── Dynamic Soothing Dancing Palettes ── */
-    const feed = document.getElementById('feed');
-    let reelCount = 0;
-    let lastSnapIndex = -1;
-
-    const soothingPalettes = [
-      "linear-gradient(135deg, #1b2838, #2c3e50, #4ca1af)",
-      "linear-gradient(135deg, #2b1055, #7597de, #24243e)",
-      "linear-gradient(135deg, #093028, #237a57, #114357)",
-      "linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)",
-      "linear-gradient(135deg, #141e30, #243b55, #4b6cb7)",
-      "linear-gradient(135deg, #1f1c2c, #928dab, #360033)",
-      "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
-      "linear-gradient(135deg, #2c3e50, #3498db, #2980b9)"
-    ];
-
-    /* Heavy Haptic Pulse */
-    function triggerStrongHaptic() {
-      if ('vibrate' in navigator) {
-        navigator.vibrate([45, 25, 60]);
-      }
-    }
-
-    /* Generate Card with Rotating Color Gradients */
-    function createReel(index) {
-      const card = document.createElement('div');
-      card.className = 'reel';
-      card.style.backgroundImage = soothingPalettes[(index - 1) % soothingPalettes.length];
-
-      const number = document.createElement('div');
-      number.className = 'reel-number';
-      number.textContent = index;
-
-      card.appendChild(number);
-      return card;
-    }
-
-    function addReels(count = 5) {
-      const frag = document.createDocumentFragment();
-      for (let i = 0; i < count; i++) {
-        reelCount++;
-        frag.appendChild(createReel(reelCount));
-      }
-      feed.appendChild(frag);
-    }
-
-    // Initialize starting reels at 1
-    addReels(5);
-
-    /* ── Scroll Tracking & Haptics ── */
-    feed.addEventListener('scroll', () => {
-      const h = feed.clientHeight || 1;
-      const activeIdx = Math.round(feed.scrollTop / h) + 1;
-
-      if (activeIdx !== lastSnapIndex && activeIdx > 0) {
-        lastSnapIndex = activeIdx;
-        triggerStrongHaptic();
-      }
-
-      // Infinite load buffer
-      if (feed.scrollTop + feed.clientHeight >= feed.scrollHeight - (h * 2)) {
-        addReels(4);
-      }
-    }, { passive: true });
-  </script>
+  /* Start directly on reel 1 whenever the app opens. */
+  begin();
+})();
+</script>
 </body>
 </html>
