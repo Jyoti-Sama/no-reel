@@ -1,12 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
   <title>Nothing Feed</title>
+
+  <!-- PWA Metadata -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0d0e15" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nothing" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
   <style>
+    :root {
+      --glow: #c9d4e6;
+      --ink: #0d0e15;
+      --hair: rgba(255, 255, 255, 0.12);
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -15,134 +29,213 @@
       user-select: none;
     }
 
-    body, html {
+    html, body {
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
+      background: var(--ink);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #0b0c10;
+      overscroll-behavior: none;
     }
 
-    /* Snap container for the vertical reels */
-    #feed-container {
-      width: 100%;
-      height: 100%;
+    /* Snapping vertical feed */
+    #feed {
+      position: absolute;
+      inset: 0;
       overflow-y: scroll;
       scroll-snap-type: y mandatory;
+      overscroll-behavior-y: contain;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
-    #feed-container::-webkit-scrollbar {
+    #feed::-webkit-scrollbar {
       display: none;
     }
 
     /* Individual reel card */
     .reel {
+      position: relative;
       width: 100%;
-      height: 100%;
+      height: 100dvh;
       scroll-snap-align: start;
       scroll-snap-stop: always;
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative;
-      background-size: 300% 300%;
-      animation: soothingFlow 12s ease infinite;
+      background-size: 250% 250%;
+      animation: ambientShift 10s ease infinite;
     }
 
-    /* Subtle, soothing flowing gradient animation */
-    @keyframes soothingFlow {
+    @keyframes ambientShift {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
 
-    /* Centered reel number count */
+    /* Large centered count */
     .reel-number {
-      font-size: 5rem;
+      font-size: clamp(5rem, 20vw, 8rem);
       font-weight: 800;
-      letter-spacing: -2px;
-      color: rgba(255, 255, 255, 0.85);
-      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      letter-spacing: -0.04em;
+      color: rgba(255, 255, 255, 0.88);
+      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
       pointer-events: none;
-      transition: transform 0.2s ease-out;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* PWA install prompt banner */
+    #install-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(20, 24, 35, 0.85);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--hair);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    #install-bar[hidden] {
+      display: none;
+    }
+    #install-bar p {
+      font-size: 13px;
+      color: var(--glow);
+    }
+    .install-btn {
+      background: var(--glow);
+      color: var(--ink);
+      border: 0;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .dismiss-btn {
+      background: transparent;
+      border: 0;
+      font-size: 20px;
+      color: var(--glow);
+      cursor: pointer;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
 
-  <div id="feed-container"></div>
+  <div id="feed"></div>
+
+  <!-- PWA Install Banner -->
+  <div id="install-bar" hidden>
+    <p>Install Nothing Feed</p>
+    <button class="install-btn" id="install-btn">Install</button>
+    <button class="dismiss-btn" id="dismiss-btn" aria-label="Dismiss">×</button>
+  </div>
 
   <script>
-    const container = document.getElementById("feed-container");
-    let reelCounter = 0;
-    let lastHapticIndex = -1;
-
-    // Rich, calm atmospheric color palettes
-    const soothingGradients = [
-      "linear-gradient(135deg, #1f1c2c, #928dab, #2c3e50)",
-      "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
-      "linear-gradient(135deg, #2b5876, #4e4376, #141e30)",
-      "linear-gradient(135deg, #141e30, #243b55, #1e3c72)",
-      "linear-gradient(135deg, #232526, #414345, #1f1c2c)",
-      "linear-gradient(135deg, #134e5e, #71b280, #0f2027)",
-      "linear-gradient(135deg, #3a1c71, #d76d77, #283048)",
-      "linear-gradient(135deg, #1e130c, #9a8478, #2c3e50)",
-      "linear-gradient(135deg, #000428, #004e92, #0d1b2a)"
-    ];
-
-    // Stronger haptic feedback (punchy dual impact)
-    function triggerStrongHaptic() {
-      if ("vibrate" in navigator) {
-        navigator.vibrate([40, 30, 60]);
-      }
+    /* ── Service Worker Registration ── */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
     }
 
-    // Append a reel card with animated gradient and centered number
-    function appendReel() {
-      reelCounter++;
-      const reel = document.createElement("div");
-      reel.className = "reel";
-      reel.dataset.index = reelCounter;
+    /* ── PWA Install Flow ── */
+    let deferredPrompt = null;
+    const installBar = document.getElementById('install-bar');
+    const installBtn = document.getElementById('install-btn');
+    const dismissBtn = document.getElementById('dismiss-btn');
 
-      const gradient = soothingGradients[(reelCounter - 1) % soothingGradients.length];
-      reel.style.backgroundImage = gradient;
-
-      const number = document.createElement("div");
-      number.className = "reel-number";
-      number.textContent = reelCounter;
-
-      reel.appendChild(number);
-      container.appendChild(reel);
-    }
-
-    // Initialize the first reels starting from #1
-    for (let i = 0; i < 5; i++) {
-      appendReel();
-    }
-
-    // Infinite scroll & haptic detection on active reel change
-    container.addEventListener("scroll", () => {
-      const scrollPos = container.scrollTop;
-      const height = container.clientHeight;
-      const currentIndex = Math.round(scrollPos / height) + 1;
-
-      // Haptic triggers once per newly focused reel
-      if (currentIndex !== lastHapticIndex && currentIndex > 0) {
-        lastHapticIndex = currentIndex;
-        triggerStrongHaptic();
-      }
-
-      // Add more items when approaching the bottom
-      if (container.scrollTop + container.clientHeight >= container.scrollHeight - (container.clientHeight * 2)) {
-        appendReel();
-      }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBar.hidden = false;
     });
 
-    // Register service worker if available
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(() => {});
+    installBtn.addEventListener('click', () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        installBar.hidden = true;
+      });
+    });
+
+    dismissBtn.addEventListener('click', () => {
+      installBar.hidden = true;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBar.hidden = true;
+    });
+
+    /* ── Feed & Smooth Colors ── */
+    const feed = document.getElementById('feed');
+    let reelCount = 0;
+    let lastSnapIndex = -1;
+
+    const gradients = [
+      "linear-gradient(135deg, #161b33, #474973, #0d0c1d)",
+      "linear-gradient(135deg, #09203f, #537895, #141e30)",
+      "linear-gradient(135deg, #1f1c2c, #928dab, #24243e)",
+      "linear-gradient(135deg, #114357, #f29492, #2c3e50)",
+      "linear-gradient(135deg, #2b5876, #4e4376, #0e1118)",
+      "linear-gradient(135deg, #3a1c71, #d76d77, #283c86)",
+      "linear-gradient(135deg, #134e5e, #71b280, #04060a)",
+      "linear-gradient(135deg, #1c1a27, #595260, #2c2e43)"
+    ];
+
+    /* Firm, punchy haptic pulse */
+    function triggerHeavyHaptic() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([45, 25, 55]);
+      }
     }
+
+    function createReelCard(index) {
+      const card = document.createElement('div');
+      card.className = 'reel';
+      card.style.backgroundImage = gradients[(index - 1) % gradients.length];
+
+      const number = document.createElement('div');
+      number.className = 'reel-number';
+      number.textContent = index;
+
+      card.appendChild(number);
+      return card;
+    }
+
+    function appendBatch(count = 5) {
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < count; i++) {
+        reelCount++;
+        fragment.appendChild(createReelCard(reelCount));
+      }
+      feed.appendChild(fragment);
+    }
+
+    // Always start at #1
+    appendBatch(5);
+
+    /* ── Haptics & Infinite Scroll ── */
+    feed.addEventListener('scroll', () => {
+      const h = feed.clientHeight || 1;
+      const activeIdx = Math.round(feed.scrollTop / h) + 1;
+
+      if (activeIdx !== lastSnapIndex && activeIdx > 0) {
+        lastSnapIndex = activeIdx;
+        triggerHeavyHaptic();
+      }
+
+      // Add cards before hitting the edge
+      if (feed.scrollTop + feed.clientHeight >= feed.scrollHeight - (h * 2)) {
+        appendBatch(4);
+      }
+    }, { passive: true });
   </script>
 </body>
 </html>
