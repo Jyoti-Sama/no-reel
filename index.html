@@ -39,7 +39,7 @@
       overscroll-behavior: none;
     }
 
-    /* Snapping vertical feed */
+    /* Vertical snapping container */
     #feed {
       position: absolute;
       inset: 0;
@@ -53,7 +53,7 @@
       display: none;
     }
 
-    /* Individual reel card */
+    /* Card background with fluid dancing gradient */
     .reel {
       position: relative;
       width: 100%;
@@ -63,23 +63,32 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-size: 250% 250%;
-      animation: ambientShift 10s ease infinite;
+      background-size: 300% 300%;
+      animation: dancingGradient 9s ease infinite;
     }
 
-    @keyframes ambientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes dancingGradient {
+      0% {
+        background-position: 0% 50%;
+        filter: hue-rotate(0deg);
+      }
+      50% {
+        background-position: 100% 50%;
+        filter: hue-rotate(25deg);
+      }
+      100% {
+        background-position: 0% 50%;
+        filter: hue-rotate(0deg);
+      }
     }
 
-    /* Large centered count */
+    /* Centered reel number */
     .reel-number {
-      font-size: clamp(5rem, 20vw, 8rem);
+      font-size: clamp(5.5rem, 22vw, 8.5rem);
       font-weight: 800;
       letter-spacing: -0.04em;
-      color: rgba(255, 255, 255, 0.88);
-      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
       pointer-events: none;
       font-variant-numeric: tabular-nums;
     }
@@ -92,8 +101,8 @@
       right: 0;
       z-index: 10;
       padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
-      background: rgba(20, 24, 35, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(14, 17, 24, 0.85);
+      backdrop-filter: blur(14px);
       border-top: 1px solid var(--hair);
       display: flex;
       align-items: center;
@@ -144,7 +153,7 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
 
-    /* ── PWA Install Flow ── */
+    /* ── PWA Install Trigger ── */
     let deferredPrompt = null;
     const installBar = document.getElementById('install-bar');
     const installBtn = document.getElementById('install-btn');
@@ -173,33 +182,34 @@
       installBar.hidden = true;
     });
 
-    /* ── Feed & Smooth Colors ── */
+    /* ── Dynamic Soothing Dancing Palettes ── */
     const feed = document.getElementById('feed');
     let reelCount = 0;
     let lastSnapIndex = -1;
 
-    const gradients = [
-      "linear-gradient(135deg, #161b33, #474973, #0d0c1d)",
-      "linear-gradient(135deg, #09203f, #537895, #141e30)",
-      "linear-gradient(135deg, #1f1c2c, #928dab, #24243e)",
-      "linear-gradient(135deg, #114357, #f29492, #2c3e50)",
-      "linear-gradient(135deg, #2b5876, #4e4376, #0e1118)",
-      "linear-gradient(135deg, #3a1c71, #d76d77, #283c86)",
-      "linear-gradient(135deg, #134e5e, #71b280, #04060a)",
-      "linear-gradient(135deg, #1c1a27, #595260, #2c2e43)"
+    const soothingPalettes = [
+      "linear-gradient(135deg, #1b2838, #2c3e50, #4ca1af)",
+      "linear-gradient(135deg, #2b1055, #7597de, #24243e)",
+      "linear-gradient(135deg, #093028, #237a57, #114357)",
+      "linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)",
+      "linear-gradient(135deg, #141e30, #243b55, #4b6cb7)",
+      "linear-gradient(135deg, #1f1c2c, #928dab, #360033)",
+      "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+      "linear-gradient(135deg, #2c3e50, #3498db, #2980b9)"
     ];
 
-    /* Firm, punchy haptic pulse */
-    function triggerHeavyHaptic() {
+    /* Heavy Haptic Pulse */
+    function triggerStrongHaptic() {
       if ('vibrate' in navigator) {
-        navigator.vibrate([45, 25, 55]);
+        navigator.vibrate([45, 25, 60]);
       }
     }
 
-    function createReelCard(index) {
+    /* Generate Card with Rotating Color Gradients */
+    function createReel(index) {
       const card = document.createElement('div');
       card.className = 'reel';
-      card.style.backgroundImage = gradients[(index - 1) % gradients.length];
+      card.style.backgroundImage = soothingPalettes[(index - 1) % soothingPalettes.length];
 
       const number = document.createElement('div');
       number.className = 'reel-number';
@@ -209,31 +219,31 @@
       return card;
     }
 
-    function appendBatch(count = 5) {
-      const fragment = document.createDocumentFragment();
+    function addReels(count = 5) {
+      const frag = document.createDocumentFragment();
       for (let i = 0; i < count; i++) {
         reelCount++;
-        fragment.appendChild(createReelCard(reelCount));
+        frag.appendChild(createReel(reelCount));
       }
-      feed.appendChild(fragment);
+      feed.appendChild(frag);
     }
 
-    // Always start at #1
-    appendBatch(5);
+    // Initialize starting reels at 1
+    addReels(5);
 
-    /* ── Haptics & Infinite Scroll ── */
+    /* ── Scroll Tracking & Haptics ── */
     feed.addEventListener('scroll', () => {
       const h = feed.clientHeight || 1;
       const activeIdx = Math.round(feed.scrollTop / h) + 1;
 
       if (activeIdx !== lastSnapIndex && activeIdx > 0) {
         lastSnapIndex = activeIdx;
-        triggerHeavyHaptic();
+        triggerStrongHaptic();
       }
 
-      // Add cards before hitting the edge
+      // Infinite load buffer
       if (feed.scrollTop + feed.clientHeight >= feed.scrollHeight - (h * 2)) {
-        appendBatch(4);
+        addReels(4);
       }
     }, { passive: true });
   </script>
