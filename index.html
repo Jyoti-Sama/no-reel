@@ -1,487 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>Nothing Feed</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Nothing Feed</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0d0e15" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
 
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0E1118">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Nothing">
-<link rel="apple-touch-icon" href="icon-192.png">
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0b0c10;
+    }
 
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    /* Snap container for the vertical reels */
+    #feed-container {
+      width: 100%;
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #feed-container::-webkit-scrollbar {
+      display: none;
+    }
 
-<style>
-:root{
-  --ink:      #0E1118;
-  --ink-lift: #141823;
-  --glow:     #C9D4E6;
-  --mute:     #767F91;
-  --faint:    #39404F;
-  --hair:     rgba(201,212,230,.09);
-  --sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --serif: "Instrument Serif", ui-serif, Georgia, serif;
-}
+    /* Individual reel card */
+    .reel {
+      width: 100%;
+      height: 100%;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background-size: 300% 300%;
+      animation: soothingFlow 12s ease infinite;
+    }
 
-*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    /* Subtle, soothing flowing gradient animation */
+    @keyframes soothingFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-html,body{
-  height:100%; height:100dvh;
-  background:var(--ink);
-  color:var(--glow);
-  font-family:var(--sans);
-  overscroll-behavior:none;
-}
-body{
-  position:fixed; inset:0;
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* ── feed ───────────────────────────────────── */
-#feed{
-  position:absolute; inset:0;
-  overflow-y:scroll;
-  scroll-snap-type:y mandatory;
-  overscroll-behavior-y:contain;
-  scrollbar-width:none;
-  outline:none;
-}
-#feed::-webkit-scrollbar{ display:none; }
-
-.reel{
-  position:relative;
-  height:100dvh;
-  width:100%;
-  scroll-snap-align:start;
-  scroll-snap-stop:always;
-  display:flex;
-  align-items:flex-end;
-  border-top:1px solid var(--hair);
-  background:var(--ink);
-}
-.reel:first-child{ border-top:0; }
-
-.slug{
-  padding:0 20px calc(36px + env(safe-area-inset-bottom)) 20px;
-  font-size:12px;
-  letter-spacing:.06em;
-  color:var(--faint);
-  font-variant-numeric:tabular-nums;
-}
-
-/* dead social rail */
-.rail{
-  position:absolute;
-  right:14px;
-  bottom:calc(32px + env(safe-area-inset-bottom));
-  display:flex;
-  flex-direction:column;
-  gap:28px;
-  opacity:.12;
-  pointer-events:none;
-}
-.rail svg{ width:28px; height:28px; display:block; stroke:var(--glow); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
-
-/* milestone card */
-.reel--mark{ align-items:center; justify-content:center; }
-.mark{ text-align:center; }
-.mark b{
-  display:block;
-  font-family:var(--serif);
-  font-weight:400;
-  font-size:clamp(60px,22vw,120px);
-  line-height:.88;
-  letter-spacing:-.02em;
-  color:var(--mute);
-  font-variant-numeric:tabular-nums;
-}
-.mark span{
-  display:block;
-  margin-top:14px;
-  font-size:12px;
-  letter-spacing:.07em;
-  color:var(--faint);
-  text-transform:uppercase;
-}
-
-/* screen dims over time */
-#dim{
-  position:absolute; inset:0;
-  background:#04060A;
-  opacity:0;
-  pointer-events:none;
-  z-index:2;
-  transition:opacity 1.4s linear;
-}
-
-/* ── chrome ─────────────────────────────────── */
-#chrome{
-  position:absolute; top:0; left:0; right:0; z-index:3;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:calc(14px + env(safe-area-inset-top)) 16px 14px 18px;
-  background:linear-gradient(to bottom, rgba(14,17,24,.9), transparent);
-}
-#tally{ font-size:12px; letter-spacing:.05em; color:var(--mute); font-variant-numeric:tabular-nums; }
-
-button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
-button:focus-visible{ outline:2px solid var(--glow); outline-offset:3px; border-radius:4px; }
-
-.pill{
-  border:1px solid var(--hair);
-  border-radius:999px;
-  padding:8px 16px;
-  font-size:13px;
-  color:var(--glow);
-  background:rgba(20,24,35,.75);
-  backdrop-filter:blur(10px);
-}
-
-/* ── sheets ─────────────────────────────────── */
-.sheet{
-  position:absolute; inset:0; z-index:5;
-  background:var(--ink);
-  display:flex; flex-direction:column; justify-content:space-between;
-  padding:calc(52px + env(safe-area-inset-top)) 26px calc(36px + env(safe-area-inset-bottom));
-  overflow-y:auto;
-}
-.sheet[hidden]{ display:none; }
-
-.sheet h1{
-  font-family:var(--serif);
-  font-weight:400;
-  font-size:clamp(48px,14vw,76px);
-  line-height:.93;
-  letter-spacing:-.025em;
-}
-.sheet h1 em{ font-style:italic; }
-
-.lede{
-  margin-top:18px;
-  max-width:34ch;
-  font-size:15.5px;
-  line-height:1.55;
-  color:var(--mute);
-}
-
-.ledger{
-  border-top:1px solid var(--hair);
-  padding-top:15px;
-  font-size:13px;
-  color:var(--faint);
-  font-variant-numeric:tabular-nums;
-}
-.ledger p+p{ margin-top:5px; }
-
-.actions{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
-.go{
-  width:100%; padding:15px; border-radius:12px;
-  background:var(--glow); color:var(--ink);
-  font-size:16px; font-weight:500;
-}
-.quiet{
-  width:100%; padding:15px; border-radius:12px;
-  border:1px solid var(--hair); color:var(--mute);
-  font-size:15px;
-}
-
-.toggle{
-  margin-top:18px;
-  display:flex; align-items:center; gap:9px;
-  font-size:13px; color:var(--faint);
-}
-.toggle input{ accent-color:var(--mute); width:15px; height:15px; }
-
-.stat{
-  font-family:var(--serif);
-  font-size:clamp(36px,11vw,58px);
-  line-height:1.05;
-  color:var(--glow);
-  max-width:18ch;
-}
-
-/* install banner */
-#install-bar{
-  position:absolute; bottom:0; left:0; right:0; z-index:10;
-  padding:14px 20px calc(14px + env(safe-area-inset-bottom));
-  background:var(--ink-lift);
-  border-top:1px solid var(--hair);
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-}
-#install-bar[hidden]{ display:none; }
-#install-bar p{ font-size:13px; color:var(--mute); max-width:22ch; line-height:1.4; }
-.install-btn{
-  flex-shrink:0;
-  background:var(--glow); color:var(--ink);
-  font-size:13px; font-weight:500;
-  padding:9px 16px; border-radius:8px;
-}
-.dismiss-btn{ font-size:22px; color:var(--faint); padding:0 4px; }
-</style>
+    /* Centered reel number count */
+    .reel-number {
+      font-size: 5rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      color: rgba(255, 255, 255, 0.85);
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+      transition: transform 0.2s ease-out;
+    }
+  </style>
 </head>
 <body>
 
-<div id="feed" tabindex="0" aria-label="Empty feed"></div>
-<div id="dim"></div>
+  <div id="feed-container"></div>
 
-<div id="chrome" hidden>
-  <div id="tally">0 reels · 0:00</div>
-  <button class="pill" id="done-btn">Done</button>
-</div>
+  <script>
+    const container = document.getElementById("feed-container");
+    let reelCounter = 0;
+    let lastHapticIndex = -1;
 
-<!-- Start screen -->
-<section class="sheet" id="start">
-  <div>
-    <h1>Nothing<br><em>to see</em></h1>
-    <p class="lede">An endless feed with no content. Same scroll, same snap, same dead buttons — just nothing on the other side of the swipe.</p>
-    <label class="toggle"><input type="checkbox" id="buzz" checked> Haptic on each swipe</label>
-  </div>
-  <div>
-    <div class="ledger" id="lifetime-start"><p>First session.</p></div>
-    <div class="actions">
-      <button class="go" id="begin-btn">Start scrolling</button>
-    </div>
-  </div>
-</section>
+    // Rich, calm atmospheric color palettes
+    const soothingGradients = [
+      "linear-gradient(135deg, #1f1c2c, #928dab, #2c3e50)",
+      "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+      "linear-gradient(135deg, #2b5876, #4e4376, #141e30)",
+      "linear-gradient(135deg, #141e30, #243b55, #1e3c72)",
+      "linear-gradient(135deg, #232526, #414345, #1f1c2c)",
+      "linear-gradient(135deg, #134e5e, #71b280, #0f2027)",
+      "linear-gradient(135deg, #3a1c71, #d76d77, #283048)",
+      "linear-gradient(135deg, #1e130c, #9a8478, #2c3e50)",
+      "linear-gradient(135deg, #000428, #004e92, #0d1b2a)"
+    ];
 
-<!-- Summary screen -->
-<section class="sheet" id="summary" hidden>
-  <div>
-    <p class="stat" id="sum-line">—</p>
-    <p class="lede" id="sub-line"></p>
-  </div>
-  <div>
-    <div class="ledger" id="lifetime-sum"></div>
-    <div class="actions">
-      <button class="quiet" id="again-btn">Keep scrolling</button>
-      <button class="go" id="close-btn">Close the feed</button>
-    </div>
-  </div>
-</section>
-
-<!-- Install banner (shows when installable) -->
-<div id="install-bar" hidden>
-  <p>Add Nothing Feed to your home screen</p>
-  <button class="install-btn" id="install-btn">Install</button>
-  <button class="dismiss-btn" id="dismiss-btn" aria-label="Dismiss">×</button>
-</div>
-
-<script>
-(function(){
-  "use strict";
-
-  /* ── service worker ── */
-  if ('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(function(){});
-  }
-
-  /* ── PWA install prompt ── */
-  var deferredPrompt = null;
-  var installBar = document.getElementById('install-bar');
-
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault();
-    deferredPrompt = e;
-    installBar.hidden = false;
-  });
-  document.getElementById('install-btn').addEventListener('click', function(){
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(){ deferredPrompt = null; installBar.hidden = true; });
-  });
-  document.getElementById('dismiss-btn').addEventListener('click', function(){
-    installBar.hidden = true;
-  });
-  window.addEventListener('appinstalled', function(){ installBar.hidden = true; });
-
-  /* ── refs ── */
-  var feed   = document.getElementById('feed');
-  var dim    = document.getElementById('dim');
-  var chrome = document.getElementById('chrome');
-  var tally  = document.getElementById('tally');
-  var startEl  = document.getElementById('start');
-  var sumEl    = document.getElementById('summary');
-  var buzzBox  = document.getElementById('buzz');
-
-  var RAIL = '<div class="rail">'
-    + '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.6-7-9.4A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.6C19 15.4 12 20 12 20z"/></svg>'
-    + '<svg viewBox="0 0 24 24"><path d="M20 12a7.5 7.5 0 0 1-10.8 6.7L4 20l1.4-4.9A7.5 7.5 0 1 1 20 12z"/></svg>'
-    + '<svg viewBox="0 0 24 24"><path d="M5 12v7h14v-7"/><path d="M12 15V4"/><path d="M8.5 7.5 12 4l3.5 3.5"/></svg>'
-    + '<svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="18" r="1.2"/></svg>'
-    + '</div>';
-
-  /* ── lifetime store ── */
-  var KEY = 'nf:v2';
-  var life = { reels:0, seconds:0, sessions:0 };
-  try { var p = JSON.parse(localStorage.getItem(KEY)||'{}');
-    if (p.reels) life.reels = p.reels|0;
-    if (p.seconds) life.seconds = p.seconds|0;
-    if (p.sessions) life.sessions = p.sessions|0;
-  } catch(e){}
-
-  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(life)); }catch(e){} }
-
-  function clock(s){
-    s = Math.max(0, Math.round(s));
-    var m=Math.floor(s/60), r=s%60;
-    return m+':'+(r<10?'0':'')+r;
-  }
-  function longClock(s){
-    s = Math.max(0, Math.round(s));
-    if (s<60) return s+' seconds';
-    var m=Math.round(s/60);
-    if (m<60) return m+(m===1?' minute':' minutes');
-    var h=Math.floor(m/60),mm=m%60;
-    return h+(h===1?' hour':' hours')+(mm?' '+mm+' min':'');
-  }
-  function pl(n,w){ return n+' '+w+(n===1?'':'s'); }
-
-  function paintLife(node){
-    if (!life.sessions){ node.innerHTML='<p>First session.</p>'; return; }
-    node.innerHTML='<p>All time: '+pl(life.reels,'empty reel')+' scrolled.</p>'
-      +'<p>'+longClock(life.seconds)+' across '+pl(life.sessions,'session')+'.</p>';
-  }
-  paintLife(document.getElementById('lifetime-start'));
-
-  /* ── feed ── */
-  var base=0, maxIdx=0, lastSnap=-1;
-  var running=false, t0=0, sessionSec=0;
-  var committed={reels:0,sec:0};
-
-  function makeCard(i){
-    var el=document.createElement('div');
-    if (i>0 && i%50===0){
-      el.className='reel reel--mark';
-      el.innerHTML='<div class="mark"><b>'+i+'</b><span>empty reels</span></div>';
-    } else {
-      el.className='reel';
-      var n=String(i+1); while(n.length<4) n='0'+n;
-      el.innerHTML='<div class="slug">'+n+'</div>'+RAIL;
+    // Stronger haptic feedback (punchy dual impact)
+    function triggerStrongHaptic() {
+      if ("vibrate" in navigator) {
+        navigator.vibrate([40, 30, 60]);
+      }
     }
-    return el;
-  }
 
-  function grow(n){
-    var frag=document.createDocumentFragment();
-    var next=base+feed.children.length;
-    for(var k=0;k<n;k++) frag.appendChild(makeCard(next+k));
-    feed.appendChild(frag);
-  }
+    // Append a reel card with animated gradient and centered number
+    function appendReel() {
+      reelCounter++;
+      const reel = document.createElement("div");
+      reel.className = "reel";
+      reel.dataset.index = reelCounter;
 
-  function curIdx(){
-    var h=feed.clientHeight||1;
-    return base+Math.round(feed.scrollTop/h);
-  }
+      const gradient = soothingGradients[(reelCounter - 1) % soothingGradients.length];
+      reel.style.backgroundImage = gradient;
 
-  var settle;
-  function trim(){
-    var h=feed.clientHeight; if(!h) return;
-    var off=Math.round(feed.scrollTop/h);
-    var excess=off-4; if(excess<12) return;
-    feed.style.scrollSnapType='none';
-    for(var k=0;k<excess;k++) feed.removeChild(feed.firstElementChild);
-    base+=excess;
-    feed.scrollTop-=excess*h;
-    requestAnimationFrame(function(){ feed.style.scrollSnapType=''; });
-  }
+      const number = document.createElement("div");
+      number.className = "reel-number";
+      number.textContent = reelCounter;
 
-  function buzz(){
-    if(!buzzBox.checked) return;
-    try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
-  }
-
-  feed.addEventListener('scroll', function(){
-    var i=curIdx();
-    if(i!==lastSnap){
-      lastSnap=i; buzz();
-      if(i>maxIdx) maxIdx=i;
-      paintTally();
+      reel.appendChild(number);
+      container.appendChild(reel);
     }
-    if(feed.children.length-(i-base)<6) grow(10);
-    clearTimeout(settle); settle=setTimeout(trim,300);
-  },{passive:true});
 
-  /* ── timing + dimming ── */
-  function paintTally(){
-    tally.textContent=maxIdx+(maxIdx===1?' reel · ':' reels · ')+clock(sessionSec);
-  }
+    // Initialize the first reels starting from #1
+    for (let i = 0; i < 5; i++) {
+      appendReel();
+    }
 
-  var tick;
-  function startTick(){
-    clearInterval(tick);
-    tick=setInterval(function(){
-      if(!running) return;
-      sessionSec=(Date.now()-t0)/1000;
-      paintTally();
-      dim.style.opacity=Math.min(0.78,(sessionSec/360)*0.78).toFixed(3);
-      if(Math.round(sessionSec)%15===0) commit(false);
-    },1000);
-  }
+    // Infinite scroll & haptic detection on active reel change
+    container.addEventListener("scroll", () => {
+      const scrollPos = container.scrollTop;
+      const height = container.clientHeight;
+      const currentIndex = Math.round(scrollPos / height) + 1;
 
-  function commit(end){
-    var dr=maxIdx-committed.reels, ds=sessionSec-committed.sec;
-    if(dr>0){ life.reels+=dr; committed.reels=maxIdx; }
-    if(ds>0){ life.seconds+=ds; committed.sec=sessionSec; }
-    if(end) life.sessions+=1;
-    save();
-  }
+      // Haptic triggers once per newly focused reel
+      if (currentIndex !== lastHapticIndex && currentIndex > 0) {
+        lastHapticIndex = currentIndex;
+        triggerStrongHaptic();
+      }
 
-  /* ── flow ── */
-  function begin(){
-    base=0; maxIdx=0; lastSnap=-1;
-    committed={reels:0,sec:0}; sessionSec=0;
-    feed.innerHTML='';
-    grow(14);
-    feed.scrollTop=0;
-    dim.style.opacity=0;
-    startEl.hidden=true; sumEl.hidden=true; chrome.hidden=false;
-    paintTally(); running=true; t0=Date.now();
-    startTick(); feed.focus({preventScroll:true});
-  }
+      // Add more items when approaching the bottom
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - (container.clientHeight * 2)) {
+        appendReel();
+      }
+    });
 
-  function finish(){
-    running=false; clearInterval(tick);
-    sessionSec=(Date.now()-t0)/1000;
-    commit(true);
-
-    document.getElementById('sum-line').textContent=
-      maxIdx===0
-        ? 'You opened it and stopped.'
-        : 'You swiped past '+pl(maxIdx,'empty reel')+' in '+clock(sessionSec)+'.';
-    document.getElementById('sub-line').textContent=
-      maxIdx===0
-        ? 'That is the whole feed.'
-        : 'Nothing was on any of them. Nothing ever will be.';
-    paintLife(document.getElementById('lifetime-sum'));
-    chrome.hidden=true; sumEl.hidden=false; dim.style.opacity=0;
-  }
-
-  document.getElementById('begin-btn').addEventListener('click', begin);
-  document.getElementById('again-btn').addEventListener('click', begin);
-  document.getElementById('done-btn').addEventListener('click', finish);
-  document.getElementById('close-btn').addEventListener('click', function(){
-    sumEl.hidden=true;
-    paintLife(document.getElementById('lifetime-start'));
-    startEl.hidden=false;
-  });
-
-  document.addEventListener('visibilitychange', function(){
-    if(document.hidden && running){ sessionSec=(Date.now()-t0)/1000; commit(false); }
-    else if(!document.hidden && running){ t0=Date.now()-sessionSec*1000; }
-  });
-
-  window.addEventListener('resize', function(){
-    if(running) feed.scrollTop=(lastSnap-base)*feed.clientHeight;
-  });
-})();
-</script>
+    // Register service worker if available
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
 </body>
 </html>
